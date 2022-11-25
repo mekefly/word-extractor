@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <!-- 对代码进行编译为浏览器可识别的代码，这里使用了jsx -->
+    <!-- https://www.babeljs.cn -->
+    <script src="https://unpkg.com/@babel/standalone@7.17.11/babel.min.js"></script>
+    <!-- vue框架，著名的前端框架 -->
+    <!-- https://v3.cn.vuejs.org/ -->
+    <script src="https://unpkg.com/vue@3.2.33/dist/vue.global.js"></script>
+
+    <div id="app"></div>
+
+    <script type="text/babel">
+      const { createApp, h, ref, computed, defineComponent } = Vue;
+      // babel会将标签编译为React.createElement,所以我们打了个补丁
+      const React = { createElement: h };
+
+      const App = {
+        setup() {
+          const text = ref("这里输入你需要拆分的文章");
+          const words = computed(() => extractWord(text.value));
+          const separator = ref("\n");
+
+          function extractWord(text) {
+            // 空格
+            let words = new Set([text]);
+
+            [
+              " ",
+              "\n",
+              ".",
+              ",",
+              "-",
+              /[0-9]/,
+              /[\u4e00-\u9fa5]/,
+              /[^a-zA-Z]/,
+            ].forEach((s) => splitBy(s));
+            // 回车
+            function splitBy(s) {
+              const _words = new Set();
+              words.forEach((item) => {
+                item.split(s).forEach((word) => _words.add(word.toLowerCase()));
+              });
+              words = _words;
+            }
+            words.delete("");
+            return [...words];
+          }
+
+          function handleChange(e) {
+            text.value = e.target.value;
+          }
+
+          return () => (
+            <div>
+              <h2>请在下方输入您想要提取单词的文章</h2>
+              <textarea
+                name=""
+                id=""
+                cols="30"
+                rows="10"
+                value={text.value}
+                onchange={handleChange}
+                placeholder="这里输入你需要拆分的文字"
+              ></textarea>
+              <br />
+              <h2>请在下面输入输出分隔符,默认为回车</h2>
+              <br />
+              <input
+                value={separator.value}
+                oninput={(e) => (separator.value = e.target.value)}
+              />
+              <h2>共提取到{words.value.length}个单词</h2>
+              <p>注意：并不区分单词的正确性</p>
+              <textarea
+                name=""
+                id=""
+                cols="30"
+                rows="10"
+                value={words.value.join(separator.value)}
+              ></textarea>
+            </div>
+          );
+        },
+      };
+
+      createApp(App).mount("#app");
+    </script>
+  </body>
+</html>
